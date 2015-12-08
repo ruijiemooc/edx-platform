@@ -4,6 +4,14 @@
 <div class="badge-details">
   <div class="badge-name"><%- badge_class.display_name %></div>
   <p class="badge-description"><%- badge_class.description %></p>
+  <% if (ownProfile) { %>
+    <div class="share-button-container" aria-role="button">
+      <div class="share-icon-container">
+        <img class="icon icon-mozillaopenbadges" src="/static/certificates/images/ico-mozillaopenbadges.png" alt="Mozilla Open Badges Backpack">
+      </div>
+      <div class="share-prefix">Share</div>
+    </div>
+  <% } %>
   <div class="badge-date-stamp">
     <%-
       interpolate(
