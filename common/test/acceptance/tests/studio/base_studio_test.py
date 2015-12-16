@@ -127,7 +127,7 @@ class StudioLibraryTest(WebAppTest):
         """
         super(StudioLibraryTest, self).setUp()
         fixture = LibraryFixture(
-            'test_org',
+            'orgX',
             self.unique_id,
             'Test Library {}'.format(self.unique_id),
         )

@@ -637,7 +637,7 @@ class UniqueCourseTest(WebAppTest):
         super(UniqueCourseTest, self).setUp()
 
         self.course_info = {
-            'org': 'test_org',
+            'org': 'orgX',
             'number': self.unique_id,
             'run': 'test_run',
             'display_name': 'Test Course' + self.unique_id

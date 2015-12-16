@@ -381,7 +381,7 @@ class TestCourseImport(ImportTestMixin, StudioCourseTest):
 
         # Create a new course and visit the import page
         self.course_info = {
-            'org': 'test_org_2',
+            'org': 'orgX',
             'number': self.unique_id + '_2',
             'run': 'test_run_2',
             'display_name': 'Test Course 2' + self.unique_id
