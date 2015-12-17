@@ -6,6 +6,8 @@ import django
 from django.conf import settings
 
 # Force settings to run so that the python path is modified
+from xmodule.contentstore.content import StaticContent
+
 settings.INSTALLED_APPS  # pylint: disable=pointless-statement
 
 from openedx.core.lib.django_startup import autostartup
@@ -59,6 +61,10 @@ def run():
 
         # register InstructorService (for deleting student attempts and user staff access roles)
         set_runtime_service('instructor', InstructorService())
+
+    # Configure our base URL for CDN-served static assets if enabled.
+    if settings.FEATURES.get('ENABLE_STATIC_ASSET_CDN'):
+        StaticContent.base_url = settings.STATIC_ASSET_CDN_BASE_URL
 
     # In order to allow modules to use a handler url, we need to
     # monkey-patch the x_module library.

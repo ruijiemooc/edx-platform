@@ -1,5 +1,8 @@
 import re
 import uuid
+
+from xmodule.assetstore.assetmgr import AssetManager
+
 XASSET_LOCATION_TAG = 'c4x'
 XASSET_SRCREF_PREFIX = 'xasset:'
 
@@ -10,16 +13,20 @@ STREAM_DATA_CHUNK_SIZE = 1024
 import os
 import logging
 import StringIO
-from urlparse import urlparse, urlunparse, parse_qsl
+from urlparse import urlparse, urlunparse, parse_qsl, urljoin
 from urllib import urlencode
 
 from opaque_keys.edx.locator import AssetLocator
 from opaque_keys.edx.keys import CourseKey, AssetKey
 from opaque_keys import InvalidKeyError
+from xmodule.modulestore.exceptions import ItemNotFoundError
+from xmodule.exceptions import NotFoundError
 from PIL import Image
 
 
 class StaticContent(object):
+    base_url = None
+
     def __init__(self, loc, name, content_type, data, last_modified_at=None, thumbnail_location=None, import_path=None,
                  length=None, locked=False):
         self.location = loc
@@ -142,10 +149,21 @@ class StaticContent(object):
         Returns a path to a piece of static content when we are provided with a filepath and
         a course_id
         """
+
         # Generate url of urlparse.path component
-        scheme, netloc, orig_path, params, query, fragment = urlparse(path)
+        scheme, net_loc, orig_path, params, query, fragment = urlparse(path)
         loc = StaticContent.compute_location(course_id, orig_path)
         loc_url = StaticContent.serialize_asset_key_with_slash(loc)
+
+        # If we're in "full URL" mode, try and see if this content is locked.
+        # If it's not locked, then we can treat it as public, and attempt to
+        # ship back a CDN-ified URL to it.
+        try:
+            content = AssetManager.find(loc, as_stream=False)
+            if not getattr(content, "locked", False):
+                net_loc = StaticContent.base_url
+        except (ItemNotFoundError, NotFoundError):
+            pass # *shrug*
 
         # parse the query params for "^/static/" and replace with the location url
         orig_query = parse_qsl(query)
@@ -162,7 +180,7 @@ class StaticContent(object):
                 new_query_list.append((query_name, query_value))
 
         # Reconstruct with new path
-        return urlunparse((scheme, netloc, loc_url, params, urlencode(new_query_list), fragment))
+        return urlunparse((scheme, net_loc, loc_url, params, urlencode(new_query_list), fragment))
 
     def stream_data(self):
         yield self._data

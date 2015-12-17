@@ -369,6 +369,9 @@ FEATURES = {
 
     # Enable LTI Provider feature.
     'ENABLE_LTI_PROVIDER': False,
+
+    # Enable CDN for static, unlocked assets.
+    'ENABLE_STATIC_ASSET_CDN': False,
 }
 
 # Ignore static asset files on import which match this pattern
@@ -2658,3 +2661,7 @@ FINANCIAL_ASSISTANCE_MAX_LENGTH = 2500
 
 # Course Content Bookmarks Settings
 MAX_BOOKMARKS_PER_COURSE = 100
+
+# Base URL for CDN-capable static assets.  This should only be used for
+# static assets which are unlocked.
+STATIC_ASSET_CDN_BASE_URL = ''
