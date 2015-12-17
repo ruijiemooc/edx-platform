@@ -9,6 +9,7 @@ from xmodule.modulestore.django import SignalHandler
 from contentstore.courseware_index import CoursewareSearchIndexer, LibrarySearchIndexer
 from contentstore.proctoring import register_special_exams
 from openedx.core.djangoapps.credit.signals import on_course_publish
+from openedx.core.lib.gating import api as gating_api
 
 
 @receiver(SignalHandler.course_published)
@@ -48,3 +49,18 @@ def listen_for_library_update(sender, library_key, **kwargs):  # pylint: disable
         from .tasks import update_library_index
 
         update_library_index.delay(unicode(library_key), datetime.now(UTC).isoformat())
+
+
+@receiver(SignalHandler.item_deleted)
+def handle_item_deleted(**kwargs):
+    """
+    Receives the item_deleted signal sent by Studio when an XBlock is removed from
+    the course structure and removes any associated gating milestone data.
+
+    Arguments:
+        kwargs (dict): Contains the content usage key of the item deleted
+
+    Returns:
+        None
+    """
+    gating_api.remove_prerequisite(kwargs.get('usage_key'))

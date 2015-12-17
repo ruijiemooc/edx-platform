@@ -1917,6 +1917,12 @@ INSTALLED_APPS = (
     'openedx.core.djangoapps.self_paced',
 
     'sorl.thumbnail',
+
+    # edx-milestones service
+    'milestones',
+
+    # Gating of course content
+    'gating.apps.GatingConfig',
 )
 
 # Migrations which are not in the standard module "migrations"
@@ -2391,9 +2397,6 @@ OPTIONAL_APPS = (
 
     # edxval
     'edxval',
-
-    # milestones
-    'milestones',
 
     # edX Proctoring
     'edx_proctoring',

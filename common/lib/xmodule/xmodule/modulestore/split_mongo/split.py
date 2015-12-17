@@ -1110,7 +1110,9 @@ class SplitMongoModuleStore(SplitBulkWriteMixin, ModuleStoreWriteBase):
             block_name = qualifiers.pop('name')
             block_ids = []
             for block_id, block in course.structure['blocks'].iteritems():
-                if block_name == block_id.id and _block_matches_all(block):
+                # Do an in comparison on the name qualifier
+                # so that a list can be used to filter on block_id
+                if block_id.id in block_name and _block_matches_all(block):
                     block_ids.append(block_id)
 
             return self._load_items(course, block_ids, **kwargs)
