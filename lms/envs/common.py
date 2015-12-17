@@ -369,9 +369,6 @@ FEATURES = {
 
     # Enable LTI Provider feature.
     'ENABLE_LTI_PROVIDER': False,
-
-    # Enable CDN for static, unlocked assets.
-    'ENABLE_STATIC_ASSET_CDN': False,
 }
 
 # Ignore static asset files on import which match this pattern

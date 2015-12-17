@@ -63,8 +63,7 @@ def run():
         set_runtime_service('instructor', InstructorService())
 
     # Configure our base URL for CDN-served static assets if enabled.
-    if settings.FEATURES.get('ENABLE_STATIC_ASSET_CDN'):
-        StaticContent.base_url = settings.STATIC_ASSET_CDN_BASE_URL
+    StaticContent.base_url = settings.STATIC_ASSET_CDN_BASE_URL
 
     # In order to allow modules to use a handler url, we need to
     # monkey-patch the x_module library.
