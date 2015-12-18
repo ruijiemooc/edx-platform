@@ -1,20 +1,20 @@
 <div class="badges-overlay">
     <div class="badges-modal">
-        <div class="close"><i class="fa fa-close" alt="Close"><input type="button" class="sr" value="Close"/></i></div>
+        <div class="close"><i class="fa fa-close" aria-hidden="true"></i><button class="sr">Close</button></div>
         <h1 class="hd-1 emphasized">Share on Mozilla Backpack</h1>
         <p class="explanation">
             To share your certificate on Mozilla Backpack, you must first have a Backpack account.
             Complete the following steps to add your certificate to Backpack.
         </p>
         <hr class="modal-hr"/>
-        <img class="backpack-logo" src="<%- badges_logo %>">
+        <img class="backpack-logo" src="<%- badges_logo %>" alt="">
         <ol class="badges-steps">
             <li class="step">Create a <a href="https://backpack.openbadges.org/" target="_blank">Mozilla Backpack</a> account, or log in to your existing account
             </li>
             <li class="step"><a class="badge-link" href="<%- image_url %>" target="_blank">Download this image (right-click, save as)</a> and then <a href="https://backpack.openbadges.org/backpack/add" target="_blank">upload</a> it to your backpack.</li>
         </ol>
         <div class="image-container">
-            <img class="badges-backpack-example" src="<%- backpack_ui_img %>">
+            <img class="badges-backpack-example" src="<%- backpack_ui_img %>" alt="">
         </div>
     </div>
 </div>
