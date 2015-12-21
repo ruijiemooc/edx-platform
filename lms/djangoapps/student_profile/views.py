@@ -89,6 +89,7 @@ def learner_profile_context(request, profile_username, user_is_staff):
             'find_courses_url': marketing_link('COURSES'),
             'language_options': settings.ALL_LANGUAGES,
             'badges_logo': staticfiles_storage.url('certificates/images/backpack-logo.png'),
+            'badges_icon': staticfiles_storage.url('certificates/images/ico-mozillaopenbadges.png'),
             'backpack_ui_img': staticfiles_storage.url('certificates/images/backpack-ui.png'),
             'platform_name': microsite.get_value('platform_name', settings.PLATFORM_NAME),
         },

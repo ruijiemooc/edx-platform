@@ -135,7 +135,8 @@
                 'ownProfile': options.own_profile,
                 'badgeMeta': {
                     'badges_logo': options.badges_logo,
-                    'backpack_ui_img': options.backpack_ui_img
+                    'backpack_ui_img': options.backpack_ui_img,
+                    'badges_icon': options.badges_icon
                 }
             });
 

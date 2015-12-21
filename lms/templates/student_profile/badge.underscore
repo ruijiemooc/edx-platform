@@ -5,11 +5,13 @@
   <div class="badge-name"><%- badge_class.display_name %></div>
   <p class="badge-description"><%- badge_class.description %></p>
   <% if (ownProfile) { %>
-    <div class="share-button-container" aria-role="button">
+    <button class="share-button">
       <div class="share-icon-container">
-        <img class="icon icon-mozillaopenbadges" src="/static/certificates/images/ico-mozillaopenbadges.png" alt="Mozilla Open Badges Backpack">
+        <img class="icon icon-mozillaopenbadges" src="<%- badgeMeta.badges_icon %>" alt="<%-
+          // Translators: Backpack is a service provided by the Mozilla Corporation for displaying Open Badges.
+          gettext("Mozilla Open Badges Backpack") %>">
       </div>
-      <div class="share-prefix">Share</div>
+      <div class="share-prefix"><%- gettext("Share") %></div>
     </div>
   <% } %>
   <div class="badge-date-stamp">

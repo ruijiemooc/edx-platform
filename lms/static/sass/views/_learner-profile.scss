@@ -372,9 +372,10 @@
                     font-weight: bold;
                     color: $blue-s3;
                 }
-                .share-button-container {
+                .share-button {
                     @extend %t-action3;
-                    background-color: $gray-l6;
+                    @extend %button-reset;
+                    background: $gray-l6;
                     color: $gray-d1;
                     padding: ($baseline / 4) ($baseline / 2);
                     margin-bottom: ($baseline / 2);
@@ -392,6 +393,14 @@
                             max-width: 1.5em;
                             margin-right: .25em;
                         }
+                    }
+                    &:hover {
+                        background: $gray-l4;
+                        transition: background 1s;
+                    }
+                    &:active {
+                        box-shadow: inset 0 4px 15px 0 $black-t2;
+                        transition: none;
                     }
                 }
             }
@@ -420,11 +429,10 @@
             @extend %ui-depth2;
             color: $lighter-base-font-color;
             box-sizing: content-box;
-            position: fixed;
             top: ($baseline * 4);
-            right: 0;
-            left: 0;
-            max-width: 50%;
+            position: relative;
+            width: 80%;
+            max-width: 700px;
             margin-right: auto;
             margin-left: auto;
             border-top: rem(10) solid $blue-l2;
@@ -462,5 +470,13 @@
                 @include margin-left($baseline);
             }
         }
+    }
+
+    .modal-hr {
+        display: block;
+        border: none;
+        background-color: $light-gray;
+        height: rem(2);
+        width: 100%;
     }
 }

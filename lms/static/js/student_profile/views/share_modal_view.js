@@ -9,10 +9,12 @@
                     'class': 'badge-display'
                 },
                 events: {
-                    'click .badges-modal .close': 'close'
+                    'click .badges-modal': function (event) {event.stopPropagation();},
+                    'click .badges-modal .close': 'close',
+                    'click .badges-overlay': 'close'
                 },
                 close: function () {
-                    this.$el.fadeOut({'done': this.remove});
+                    this.$el.fadeOut('short', 'swing', _.bind(this.remove, this));
                 },
                 render: function () {
                     this.$el.html(_.template(badgeModalTemplate, this.model.toJSON()));
