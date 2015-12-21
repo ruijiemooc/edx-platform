@@ -1,7 +1,7 @@
 <div class="badges-overlay">
     <div class="badges-modal">
         <div class="close"><i class="fa fa-close" aria-hidden="true"></i><button class="sr"><%- gettext("Close") %></button></div>
-        <h1 class="hd-1 emphasized"><%- gettext("Share on Mozilla Backpack") %></h1>
+        <h1 class="modal-header"><%- gettext("Share on Mozilla Backpack") %></h1>
         <p class="explanation"><%- gettext("To share your certificate on Mozilla Backpack, you must first have a Backpack account. Complete the following steps to add your certificate to Backpack.") %>
         </p>
         <hr class="modal-hr"/>
