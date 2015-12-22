@@ -6,15 +6,26 @@
 
             var ShareModalView = Backbone.View.extend({
                 attributes: {
-                    'class': 'badge-display'
+                    'class': 'badges-overlay'
                 },
                 events: {
                     'click .badges-modal': function (event) {event.stopPropagation();},
                     'click .badges-modal .close': 'close',
-                    'click .badges-overlay': 'close'
+                    'click .badges-overlay': 'close',
+                    'keydown': 'keyAction'
                 },
                 close: function () {
                     this.$el.fadeOut('short', 'swing', _.bind(this.remove, this));
+                },
+                keyAction: function (event) {
+                    if (event.keyCode === $.ui.keyCode.ESCAPE) {
+                        this.close();
+                    }
+                },
+                ready: function() {
+                    // Focusing on the modal background directly doesn't work, probably due
+                    // to its positioning.
+                    this.$el.find('.badges-modal').focus();
                 },
                 render: function () {
                     this.$el.html(_.template(badgeModalTemplate, this.model.toJSON()));

@@ -24,7 +24,7 @@
                     modal.$el.hide();
                     modal.render();
                     $('body').append(modal.$el);
-                    modal.$el.fadeIn();
+                    modal.$el.fadeIn('short', 'swing', _.bind(modal.ready, modal));
                 },
                 render: function () {
                     this.$el.html(_.template(badgeTemplate, this.context));
