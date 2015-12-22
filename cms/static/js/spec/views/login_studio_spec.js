@@ -6,6 +6,7 @@ function($, LoginFactory, AjaxHelpers, ViewUtils) {
 
         beforeEach(function() {
             loadFixtures('login.underscore');
+            /*jshint unused: false*/
             var login_factory = new LoginFactory("/home/");
             submit_button = $('#submit');
         });
