@@ -742,8 +742,7 @@ class VideoExportTestCase(VideoDescriptorTestBase):
         self.assertEquals(expected, etree.tostring(xml, pretty_print=True))
 
 
-@patch.dict("django.conf.settings.CDN_VIDEO_URLS",
-            {"CN": "https://chinacdn.cn/"})
+@patch.dict("django.conf.settings.CDN_VIDEO_URLS", {"CN": "https://chinacdn.cn/"})
 class VideoCdnTest(unittest.TestCase):
     """
     Tests for Video CDN.
