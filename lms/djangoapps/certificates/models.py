@@ -253,6 +253,12 @@ class GeneratedCertificate(models.Model):
 
         self.save()
 
+    def is_valid(self):
+        """
+        Return True if certificate is valid and False if it is not valid.
+        """
+        return self.status == CertificateStatuses.downloadable
+
 
 class CertificateGenerationHistory(TimeStampedModel):
     """
@@ -307,6 +313,61 @@ class CertificateGenerationHistory(TimeStampedModel):
     def __unicode__(self):
         return u"certificates %s by %s on %s for %s" % \
                ("regenerated" if self.is_regeneration else "generated", self.generated_by, self.created, self.course_id)
+
+
+class CertificateInvalidation(TimeStampedModel):
+    """
+    Model for storing Certificate Invalidation.
+    """
+    generated_certificate = models.ForeignKey(GeneratedCertificate)
+    invalidated_by = models.ForeignKey(User)
+    notes = models.TextField(default=None, null=True)
+    active = models.BooleanField(default=True)
+
+    class Meta(object):
+        app_label = "certificates"
+
+    def __unicode__(self):
+        return u"Certificate %s, invalidated by %s on %s." % \
+               (self.generated_certificate, self.invalidated_by, self.created)
+
+    def deactivate(self):
+        """
+        Deactivate certificate invalidation by setting active to False.
+        """
+        self.active = False
+        self.save()
+
+    @classmethod
+    def get_certificate_invalidations(cls, course_key, student=None):
+        """
+        Return certificate invalidations filtered based on the provided course and student (if provided),
+
+        Returned value is JSON serializable list of dicts, dict element would have the follwoing key-value pairs.
+         1. id: certificate invalidation id (primary key)
+         2. user_name: username of the student to whom certificate belongs
+         3. user_email: email of the student to whom certificate belongs
+         4. invalidated_by: user id of the instructor/support user who invalidated the certificate
+         5. created: string containing date of invalidation in the following format "December 29, 2015"
+         6. notes: string cotaining notes regarding certificate invalidation.
+        """
+        certificate_invalidations = cls.objects.filter(
+            generated_certificate__course_id=course_key,
+            active=True,
+        )
+        if student:
+            certificate_invalidations = certificate_invalidations.filter(generated_certificate__user=student)
+        data = []
+        for certificate_invalidation in certificate_invalidations:
+            data.append({
+                'id': certificate_invalidation.id,
+                'user_name': certificate_invalidation.generated_certificate.user.username,
+                'user_email': certificate_invalidation.generated_certificate.user.email,
+                'invalidated_by': certificate_invalidation.invalidated_by.username,
+                'created': certificate_invalidation.created.strftime("%B %d, %Y"),
+                'notes': certificate_invalidation.notes,
+            })
+        return data
 
 
 @receiver(post_save, sender=GeneratedCertificate)
