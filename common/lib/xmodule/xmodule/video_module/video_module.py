@@ -220,7 +220,12 @@ class VideoModule(VideoFields, VideoTranscriptsMixin, VideoStudentViewHandlers, 
                         if url not in sources:
                             sources.append(url)
                         if self.download_video:
-                            download_video_link = rewrite_video_url(cdn_url, url)
+                            # function returns None when the url cannot be re-written
+                            rewritten_link = rewrite_video_url(cdn_url, url)
+                            if rewritten_link:
+                                download_video_link = rewritten_link
+                            else:
+                                download_video_link = url
 
                 # set the youtube url
                 if val_video_urls["youtube"]:

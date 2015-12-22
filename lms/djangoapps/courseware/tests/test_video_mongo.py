@@ -704,8 +704,8 @@ class TestGetHtmlMethod(BaseTestXmodule):
 
         def side_effect(*args, **kwargs):
             cdn = {
-                'http://example.com/example.mp4': 'http://cdn_example.com/example.mp4',
-                'http://example.com/example.webm': 'http://cdn_example.com/example.webm',
+                'http://example.com/example.mp4': 'http://cdn-example.com/example.mp4',
+                'http://example.com/example.webm': 'http://cdn-example.com/example.webm',
             }
             return cdn.get(args[1])
 
@@ -733,8 +733,8 @@ class TestGetHtmlMethod(BaseTestXmodule):
             'result': {
                 'download_video_link': u'example_source.mp4',
                 'sources': [
-                    u'http://cdn_example.com/example.mp4',
-                    u'http://cdn_example.com/example.webm'
+                    u'http://cdn-example.com/example.mp4',
+                    u'http://cdn-example.com/example.webm'
                 ],
             },
         }
