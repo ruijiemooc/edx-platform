@@ -742,17 +742,16 @@ class VideoExportTestCase(VideoDescriptorTestBase):
         self.assertEquals(expected, etree.tostring(xml, pretty_print=True))
 
 
-@patch.dict("django.conf.settings.CDN_VIDEO_URLS", {"CN": "https://chinacdn.cn/"})
 class VideoCdnTest(unittest.TestCase):
     """
     Tests for Video CDN.
     """
-
     def setUp(self, *args, **kwargs):
         super(VideoCdnTest, self).setUp(*args, **kwargs)
         self.original_video_file = "original_video.mp4"
         self.original_video_url = "http://www.originalvideo.com/" + self.original_video_file
 
+    @patch.dict("django.conf.settings.CDN_VIDEO_URLS", {"CN": "https://chinacdn.cn/"})
     def test_rewrite_video_url_success(self):
         """
         Test successful CDN request.
@@ -764,6 +763,7 @@ class VideoCdnTest(unittest.TestCase):
             cdn_response_video_url
         )
 
+    @patch.dict("django.conf.settings.CDN_VIDEO_URLS", {"CN": "https://chinacdn.cn/"})
     def test_rewrite_url_concat(self):
         """
         Test that written URLs are returned clean despite input
