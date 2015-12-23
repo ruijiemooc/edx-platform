@@ -182,8 +182,10 @@ class StaticContent(object):
         updated_query_params = []
         for query_name, query_value in query_params:
             if query_value.startswith("/static/"):
-                new_query_value = StaticContent.get_asset_key_from_path(course_key, query_value[len('/static/'):])
-                updated_query_params.append((query_name, '/' + new_query_value))
+                new_query_value = unicode(StaticContent.get_asset_key_from_path(course_key, query_value[len('/static/'):]))
+                if not new_query_value.startswith('/'):
+                    new_query_value = '/' + new_query_value
+                updated_query_params.append((query_name, new_query_value))
             else:
                 updated_query_params.append((query_name, query_value))
 
