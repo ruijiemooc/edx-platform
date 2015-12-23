@@ -13,7 +13,7 @@ STREAM_DATA_CHUNK_SIZE = 1024
 import os
 import logging
 import StringIO
-from urlparse import urlparse, urlunparse, parse_qsl, urljoin
+from urlparse import urlparse, urlunparse, parse_qsl
 from urllib import urlencode
 
 from opaque_keys.edx.locator import AssetLocator
@@ -160,7 +160,7 @@ class StaticContent(object):
         """
 
         # Break down the input path.
-        scheme, base_url, relative_path, params, query_string, fragment = urlparse(path)
+        _, base_url, relative_path, params, query_string, fragment = urlparse(path)
 
         # Convert our path to an asset key.
         asset_key = StaticContent.get_asset_key_from_path(course_key, relative_path)
@@ -198,9 +198,19 @@ class StaticContent(object):
 
         return urlunparse((None, base_url, prefixed_asset_key, params, urlencode(updated_query_params), fragment))
 
-
     @staticmethod
     def get_asset_key_from_path(course_key, path):
+        """
+        Parses a path, extracting an asset key or creating one.
+
+        Args:
+            course_key: key to the course which owns this asset
+            path: the path to said content
+
+        Returns:
+            AssetKey: the asset key that represents the path
+        """
+
         # If the path starts with /static/, just drop it.
         if path.startswith('/static/'):
             path = path[len('/static/'):]
@@ -217,7 +227,6 @@ class StaticContent(object):
             asset_key = StaticContent.compute_location(course_key, path[start_position:])
 
         return asset_key
-
 
     @staticmethod
     def convert_legacy_static_url_with_course_id(path, course_id):
