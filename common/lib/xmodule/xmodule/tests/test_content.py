@@ -1,12 +1,19 @@
 """Tests for contents"""
+from StringIO import StringIO
 
 import os
 import unittest
 import ddt
 from path import Path as path
+
+from opaque_keys.edx.locator import CourseLocator
 from xmodule.contentstore.content import StaticContent, StaticContentStream
 from xmodule.contentstore.content import ContentStore
+from xmodule.contentstore.django import contentstore
 from opaque_keys.edx.locations import SlashSeparatedCourseKey, AssetLocation
+from xmodule.modulestore import ModuleStoreEnum
+from xmodule.modulestore.tests.django_utils import SharedModuleStoreTestCase, ModuleStoreTestCase
+from xmodule.modulestore.tests.factories import CourseFactory
 from xmodule.static_content import _write_js, _list_descriptors
 
 SAMPLE_STRING = """
@@ -173,3 +180,94 @@ class ContentTest(unittest.TestCase):
         js_file_paths = [file_path for file_path in js_file_paths if os.path.basename(file_path).startswith('000-')]
         self.assertEqual(len(js_file_paths), 1)
         self.assertIn("XModule.Descriptor = (function () {", open(js_file_paths[0]).read())
+
+@ddt.ddt
+class CanonicalContentTest(ModuleStoreTestCase):
+    def setUp(self):
+        super(CanonicalContentTest, self).setUp()
+
+        with self.store.default_store(ModuleStoreEnum.Type.split):
+            self.new_course = CourseFactory.create(org='foo', course='bar', run='quux')
+
+            # Create an unlocked image.
+            unlocked_image_buf = StringIO()
+            unlocked_image_name = "new_unlocked_image.png"
+
+            # Save the course image to the content store.
+            unlocked_image_asset_key = StaticContent.compute_location(self.new_course.id, unlocked_image_name)
+            unlocked_image_content = StaticContent(unlocked_image_asset_key, unlocked_image_name, 'image/png', unlocked_image_buf)
+            contentstore().save(unlocked_image_content)
+
+            # Create a locked image.
+            locked_image_buf = StringIO()
+            locked_image_name = "new_locked_image.png"
+
+            # Save the course image to the content store.
+            locked_image_asset_key = StaticContent.compute_location(self.new_course.id, locked_image_name)
+            locked_image_content = StaticContent(locked_image_asset_key, locked_image_name, 'image/png', locked_image_buf, locked=True)
+            contentstore().save(locked_image_content)
+
+        with self.store.default_store(ModuleStoreEnum.Type.mongo):
+            self.old_course = CourseFactory.create(org='foo', course='baz', run='quux')
+
+            # Create an unlocked image.
+            unlocked_image_buf = StringIO()
+            unlocked_image_name = "old_unlocked_image.png"
+
+            # Save the course image to the content store.
+            unlocked_image_asset_key = StaticContent.compute_location(self.old_course.id, unlocked_image_name)
+            unlocked_image_content = StaticContent(unlocked_image_asset_key, unlocked_image_name, 'image/png', unlocked_image_buf)
+            contentstore().save(unlocked_image_content)
+
+            # Create a locked image.
+            locked_image_buf = StringIO()
+            locked_image_name = "old_locked_image.png"
+
+            # Save the course image to the content store.
+            locked_image_asset_key = StaticContent.compute_location(self.old_course.id, locked_image_name)
+            locked_image_content = StaticContent(locked_image_asset_key, locked_image_name, 'image/png', locked_image_buf, locked=True)
+            contentstore().save(locked_image_content)
+
+    @ddt.data(
+        (None, u"new_unlocked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png"),
+        (None, u"new_locked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png"),
+        (u"localhost:1234", u"new_unlocked_image.png", u"//localhost:1234/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png"),
+        (u"localhost:1234", u"new_locked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png"),
+        (None, u"/new_unlocked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png"),
+        (None, u"/new_locked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png"),
+        (u"localhost:1234", u"/new_unlocked_image.png", u"//localhost:1234/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png"),
+        (u"localhost:1234", u"/new_locked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png"),
+        (None, u"/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png"),
+        (None, u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png"),
+        (u"localhost:1234", u"/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png", u"//localhost:1234/asset-v1:foo+bar+quux+type@asset+block@new_unlocked_image.png"),
+        (u"localhost:1234", u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png", u"/asset-v1:foo+bar+quux+type@asset+block@new_locked_image.png"),
+        (u"localhost:1234", u"/c4x/foo/bar/asset/new_unlocked_image.png", u"//localhost:1234/c4x/foo/bar/asset/new_unlocked_image.png"),
+        (u"localhost:1234", u"/c4x/foo/bar/asset/new_locked_image.png", u"//localhost:1234/c4x/foo/bar/asset/new_locked_image.png"),
+    )
+    @ddt.unpack
+    def test_canonical_asset_path_with_new_style_assets(self, base_url, asset_name, expected_path):
+        StaticContent.base_url = base_url
+
+        asset_path = StaticContent.get_canonicalized_asset_path(self.new_course.id, asset_name)
+        self.assertEqual(asset_path, expected_path)
+
+    @ddt.data(
+        (None, u"old_unlocked_image.png", u"/c4x/foo/baz/asset/old_unlocked_image.png"),
+        (None, u"old_locked_image.png", u"/c4x/foo/baz/asset/old_locked_image.png"),
+        (u"localhost:1234", u"old_unlocked_image.png", u"//localhost:1234/c4x/foo/baz/asset/old_unlocked_image.png"),
+        (u"localhost:1234", u"old_locked_image.png", u"/c4x/foo/baz/asset/old_locked_image.png"),
+        (None, u"/old_unlocked_image.png", u"/c4x/foo/baz/asset/old_unlocked_image.png"),
+        (None, u"/old_locked_image.png", u"/c4x/foo/baz/asset/old_locked_image.png"),
+        (u"localhost:1234", u"/old_unlocked_image.png", u"//localhost:1234/c4x/foo/baz/asset/old_unlocked_image.png"),
+        (u"localhost:1234", u"/old_locked_image.png", u"/c4x/foo/baz/asset/old_locked_image.png"),
+        (None, u"/c4x/foo/baz/asset/old_unlocked_image.png", u"/c4x/foo/baz/asset/old_unlocked_image.png"),
+        (None, u"/c4x/foo/baz/asset/old_locked_image.png", u"/c4x/foo/baz/asset/old_locked_image.png"),
+        (u"localhost:1234", u"/c4x/foo/baz/asset/old_unlocked_image.png", u"//localhost:1234/c4x/foo/baz/asset/old_unlocked_image.png"),
+        (u"localhost:1234", u"/c4x/foo/baz/asset/old_locked_image.png", u"/c4x/foo/baz/asset/old_locked_image.png"),
+    )
+    @ddt.unpack
+    def test_canonical_asset_path_with_c4x_style_assets(self, base_url, asset_name, expected_path):
+        StaticContent.base_url = base_url
+
+        asset_path = StaticContent.get_canonicalized_asset_path(self.old_course.id, asset_name)
+        self.assertEqual(asset_path, expected_path)
