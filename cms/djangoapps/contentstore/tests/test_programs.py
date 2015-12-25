@@ -25,7 +25,7 @@ class TestProgramListing(ProgramsApiConfigMixin, ProgramsDataMixin, ModuleStoreT
     @httpretty.activate
     def test_programs_config_disabled(self):
         """Verify that the programs tab and creation button aren't rendered when config is disabled."""
-        self.create_config(enable_studio_tab=False)
+        self.create_program_config(enable_studio_tab=False)
         self.mock_programs_api()
 
         response = self.client.get(self.studio_home)
@@ -41,7 +41,7 @@ class TestProgramListing(ProgramsApiConfigMixin, ProgramsDataMixin, ModuleStoreT
         self.user = UserFactory(is_staff=False)
         self.client.login(username=self.user.username, password='test')
 
-        self.create_config()
+        self.create_program_config()
         self.mock_programs_api()
 
         response = self.client.get(self.studio_home)
@@ -50,7 +50,7 @@ class TestProgramListing(ProgramsApiConfigMixin, ProgramsDataMixin, ModuleStoreT
     @httpretty.activate
     def test_programs_displayed(self):
         """Verify that the programs tab and creation button can be rendered when config is enabled."""
-        self.create_config()
+        self.create_program_config()
 
         # When no data is provided, expect creation prompt.
         self.mock_programs_api(data={'results': []})

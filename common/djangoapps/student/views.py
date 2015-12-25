@@ -124,6 +124,8 @@ from eventtracking import tracker
 from notification_prefs.views import enable_notifications
 
 # Note that this lives in openedx, so this dependency should be refactored.
+from openedx.core.djangoapps.credentials.models import CredentialsApiConfig
+from openedx.core.djangoapps.credentials.utils import get_user_program_credentials
 from openedx.core.djangoapps.user_api.preferences import api as preferences_api
 from openedx.core.djangoapps.programs.utils import get_programs_for_dashboard
 
@@ -585,7 +587,11 @@ def dashboard(request):
     # Get any programs associated with courses being displayed.
     # This is passed along in the template context to allow rendering of
     # program-related information on the dashboard.
+    credential_configuration = CredentialsApiConfig.current()
     course_programs = _get_course_programs(user, [enrollment.course_id for enrollment in course_enrollments])
+    program_credentials = []
+    if credential_configuration.enabled:
+        program_credentials = _get_programs_credentials(user)
 
     # Construct a dictionary of course mode information
     # used to render the course list.  We re-use the course modes dict
@@ -708,6 +714,7 @@ def dashboard(request):
         'courses_requirements_not_met': courses_requirements_not_met,
         'nav_hidden': True,
         'course_programs': course_programs,
+        'program_credentials': program_credentials,
     }
 
     return render_to_response('dashboard.html', context)
@@ -2315,3 +2322,33 @@ def _get_course_programs(user, user_enrolled_courses):  # pylint: disable=invali
                 log.warning('Program structure is invalid, skipping display: %r', program)
 
     return programs_data
+
+
+def _get_programs_credentials(user):
+    """Return program credentials data required for display on
+    the learner dashboard.
+
+    Given a user, find all programs for which certificates have been earned
+    and return list of dictionaries of required program data.
+
+    Arguments:
+        user (User): user object for getting programs credentials.
+
+    Returns:
+        list, containing programs.
+    """
+    programs_credentials = get_user_program_credentials(user)
+    credentials_data = []
+    for program in programs_credentials:
+        if program.get('status') == 'active' and program.get('category') == 'xseries':
+            try:
+                program_data = {
+                    'display_name': program['name'],
+                    'subtitle': program['subtitle'],
+                    'credential_url': program['credential_url'],
+                }
+                credentials_data.append(program_data)
+            except KeyError:
+                log.warning('Program structure is invalid: %r', program)
+
+    return credentials_data

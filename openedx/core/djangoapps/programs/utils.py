@@ -105,3 +105,35 @@ def get_programs_for_dashboard(user, course_keys):
             log.exception('Unable to parse Programs API response: %r', program)
 
     return course_programs
+
+
+def get_programs_for_credentials(user, programs_credentials, credential_configuration):
+    """ Build a dictionary of programs
+
+    Given a user and an iterable of programs credentials, get all the programs
+    data and return it in a list of dictionaries.
+
+    Arguments:
+        user (User): The user to authenticate as for requesting programs
+            credentials.
+        programs_credentials (list): List of program credentials representing
+            the programs in which the given user has earned certificate.
+
+    Returns:
+        list, containing programs dictionaries.
+    """
+    certificate_programs = []
+
+    programs = get_programs(user)
+    if not programs:
+        log.debug('No programs found for the user with ID %d.', user.id)
+        return certificate_programs
+
+    for program in programs:
+        for credential in programs_credentials:
+            if program['id'] == credential['credential']['program_id']:
+                program['credential_url'] = \
+                    credential_configuration.public_service_url + 'credentials/' + credential['uuid']
+                certificate_programs.append(program)
+
+    return certificate_programs
