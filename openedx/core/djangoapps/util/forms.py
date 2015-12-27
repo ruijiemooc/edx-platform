@@ -64,7 +64,8 @@ class ExtendedNullBooleanField(NullBooleanField):
 
     widget = Select(choices=NULL_BOOLEAN_CHOICES)
 
-    def to_python(self, value):
+    @classmethod
+    def to_python(cls, value):
         """
         Explicitly checks for the string 'True', 'False', 'true',
         'false', '1' and '0' and returns boolean True or False.

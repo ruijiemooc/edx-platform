@@ -7,6 +7,7 @@ from urllib import urlencode
 from rest_framework.exceptions import PermissionDenied
 
 from opaque_keys.edx.locator import CourseLocator
+from openedx.core.djangoapps.util.forms import ExtendedNullBooleanField
 from openedx.core.djangoapps.util.test_forms import FormTestMixin
 from student.models import CourseEnrollment
 from student.tests.factories import UserFactory, CourseEnrollmentFactory
@@ -49,6 +50,7 @@ class TestBlockListGetForm(FormTestMixin, SharedModuleStoreTestCase):
             mutable=True,
         )
         self.cleaned_data = {
+            'all_blocks': None,
             'block_counts': set(),
             'depth': 0,
             'nav_depth': None,
@@ -100,8 +102,22 @@ class TestBlockListGetForm(FormTestMixin, SharedModuleStoreTestCase):
 
     #-- user
 
-    def test_no_user_param(self):
+    @ddt.data("True", "true", True, "False", "false", False, None)
+    def test_no_user_staff(self, all_blocks_value):
+        self.initial = {'requesting_user': self.staff}
+
         self.form_data.pop('username')
+        if all_blocks_value is not None:
+            self.form_data['all_blocks'] = all_blocks_value
+
+        if ExtendedNullBooleanField.to_python(all_blocks_value):
+            self.get_form(expected_valid=True)
+        else:
+            self.assert_error('username', "This field is required unless all_blocks is requested.")
+
+    def test_no_user_non_staff(self):
+        self.form_data.pop('username')
+        self.form_data['all_blocks'] = True
         self.assert_raises_permission_denied()
 
     def test_nonexistent_user_by_student(self):
@@ -134,7 +150,7 @@ class TestBlockListGetForm(FormTestMixin, SharedModuleStoreTestCase):
     def test_unenrolled_student_by_staff(self):
         CourseEnrollment.unenroll(self.student, self.course.id)
         self.initial = {'requesting_user': self.staff}
-        self.assert_raises_permission_denied()
+        self.get_form(expected_valid=True)
 
     #-- depth
 
