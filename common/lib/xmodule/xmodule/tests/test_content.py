@@ -213,7 +213,10 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(unlocked_content)
 
                 # Create a locked image.
+                locked_image = Image.new("RGB", (500, 500), "green")
                 locked_buf = StringIO()
+                locked_image.save(locked_buf, format="PNG")
+                locked_buf.seek(0)
                 locked_name = "{}_lock.png".format(prefix)
 
                 # Save the course image to the content store.
