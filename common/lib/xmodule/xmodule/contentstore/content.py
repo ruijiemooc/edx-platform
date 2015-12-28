@@ -41,6 +41,10 @@ class StaticContent(object):
         self.import_path = import_path
         self.locked = locked
 
+    @staticmethod
+    def get_base_url():
+        return StaticContent.base_url
+
     @property
     def is_thumbnail(self):
         return self.location.category == 'thumbnail'
@@ -192,7 +196,7 @@ class StaticContent(object):
                 updated_query_params.append((query_name, query_value))
 
         # Figure out if we should put in the base URL.
-        base_url = '' if is_locked else StaticContent.base_url
+        base_url = '' if is_locked else StaticContent.get_base_url()
 
         serialized_asset_key = StaticContent.serialize_asset_key_with_slash(asset_key)
 

@@ -5,6 +5,7 @@ import os
 import unittest
 import ddt
 from PIL import Image
+from mock import patch
 from path import Path as path
 
 from xmodule.contentstore.content import StaticContent, StaticContentStream
@@ -255,8 +256,9 @@ class CanonicalContentTest(ModuleStoreTestCase):
         (u'dev', u"/{thumb_key}@{prefix}_lock-{thumb_ext}", u"//dev/{thumb_key}@{prefix}_lock-{thumb_ext}"),
     )
     @ddt.unpack
-    def test_canonical_asset_path_with_new_style_assets(self, base_url, asset_name, expected_path):
-        StaticContent.base_url = base_url
+    @patch('xmodule.contentstore.content.StaticContent.get_base_url')
+    def test_canonical_asset_path_with_new_style_assets(self, base_url, asset_name, expected_path, mock_static_content_get_base_url):
+        mock_static_content_get_base_url.return_value = base_url
 
         prefix = 'split'
         c4x_block = 'c4x/a/b/asset'
@@ -289,8 +291,9 @@ class CanonicalContentTest(ModuleStoreTestCase):
         (u"dev", u"/{c4x}/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
     )
     @ddt.unpack
-    def test_canonical_asset_path_with_c4x_style_assets(self, base_url, asset_name, expected_path):
-        StaticContent.base_url = base_url
+    @patch('xmodule.contentstore.content.StaticContent.get_base_url')
+    def test_canonical_asset_path_with_c4x_style_assets(self, base_url, asset_name, expected_path, mock_static_content_get_base_url):
+        mock_static_content_get_base_url.return_value = base_url
 
         prefix = 'old'
         c4x_block = 'c4x/a/b/asset'
