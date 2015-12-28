@@ -20,7 +20,10 @@
                     'click .share-button': 'createModal'
                 },
                 createModal: function() {
-                    var modal = new ShareModalView({model: new Backbone.Model(this.context)});
+                    var modal = new ShareModalView({
+                        model: new Backbone.Model(this.context),
+                        shareButton: this.shareButton
+                    });
                     modal.$el.hide();
                     modal.render();
                     $('body').append(modal.$el);
@@ -28,6 +31,7 @@
                 },
                 render: function () {
                     this.$el.html(_.template(badgeTemplate, this.context));
+                    this.shareButton = this.$el.find('.share-button');
                     return this;
                 }
             });

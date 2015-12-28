@@ -16,6 +16,7 @@
                 },
                 close: function () {
                     this.$el.fadeOut('short', 'swing', _.bind(this.remove, this));
+                    this.options.shareButton.focus();
                 },
                 keyAction: function (event) {
                     if (event.keyCode === $.ui.keyCode.ESCAPE) {
