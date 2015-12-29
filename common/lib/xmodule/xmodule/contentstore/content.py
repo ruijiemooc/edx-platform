@@ -172,7 +172,7 @@ class StaticContent(object):
         # Check the status of the asset to see if this can be served via CDN aka publicly.
         is_locked = False
         try:
-            content = AssetManager.find(asset_key, as_stream=False)
+            content = AssetManager.find(asset_key, as_stream=True)
             is_locked = getattr(content, "locked", False)
         except (ItemNotFoundError, NotFoundError):
             # Fallback to the old behaviour only if it's a static link.  Otherwise, just
