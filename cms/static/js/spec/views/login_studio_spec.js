@@ -24,6 +24,7 @@ function($, LoginFactory, AjaxHelpers, ViewUtils) {
             var requests = AjaxHelpers.requests(this);
             expect(submit_button).not.toHaveClass('is-disabled');
             submit_button.click();
+            expect(submit_button).toHaveClass('is-disabled');
             AjaxHelpers.respondWithError(requests, {});
             expect(submit_button).not.toHaveClass('is-disabled');
         });
