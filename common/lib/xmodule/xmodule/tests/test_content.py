@@ -7,6 +7,7 @@ import ddt
 from PIL import Image
 from mock import patch
 from path import Path as path
+from urllib import quote_plus
 
 from xmodule.contentstore.content import StaticContent, StaticContentStream
 from xmodule.contentstore.content import ContentStore
@@ -101,11 +102,6 @@ class ContentTest(unittest.TestCase):
 
         content = StaticContent('loc', 'name', 'content_type', 'data')
         self.assertIsNone(content.thumbnail_location)
-
-    def test_static_url_generation_from_courseid(self):
-        course_key = SlashSeparatedCourseKey('a', 'b', 'bz')
-        url = StaticContent.convert_legacy_static_url_with_course_id('images_course_image.jpg', course_key)
-        self.assertEqual(url, '/c4x/a/b/asset/images_course_image.jpg')
 
     @ddt.data(
         (u"monsters__.jpg", u"monsters__.jpg"),
@@ -202,100 +198,190 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 self.courses[prefix] = CourseFactory.create(org='a', course='b', run=prefix)
 
                 # Create an unlocked image.
-                unlocked_image = Image.new("RGB", (500, 500), "blue")
+                unlocked_image = Image.new('RGB', (512, 512), 'blue')
                 unlocked_buf = StringIO()
-                unlocked_image.save(unlocked_buf, format="PNG")
+                unlocked_image.save(unlocked_buf, format='png')
                 unlocked_buf.seek(0)
-                unlocked_name = "{}_unlock.png".format(prefix)
-
-                # Save the course image to the content store.
+                unlocked_name = '{}_unlock.png'.format(prefix)
                 unlocked_asset_key = StaticContent.compute_location(self.courses[prefix].id, unlocked_name)
-                unlocked_content = StaticContent(unlocked_asset_key, unlocked_name, 'image/png', unlocked_buf)
+                unlocked_content = StaticContent(unlocked_asset_key, unlocked_name, 'image/png', unlocked_buf.buf)
                 contentstore().save(unlocked_content)
 
                 # Create a locked image.
-                locked_image = Image.new("RGB", (500, 500), "green")
+                locked_image = Image.new('RGB', (512, 512), 'green')
                 locked_buf = StringIO()
-                locked_image.save(locked_buf, format="PNG")
+                locked_image.save(locked_buf, format='png')
                 locked_buf.seek(0)
-                locked_name = "{}_lock.png".format(prefix)
-
-                # Save the course image to the content store.
+                locked_name = '{}_lock.png'.format(prefix)
                 locked_asset_key = StaticContent.compute_location(self.courses[prefix].id, locked_name)
-                locked_content = StaticContent(locked_asset_key, locked_name, 'image/png', locked_buf, locked=True)
+                locked_content = StaticContent(locked_asset_key, locked_name, 'image/png', locked_buf.buf, locked=True)
                 contentstore().save(locked_content)
 
                 # Create a thumbnail of the images.
-                contentstore().generate_thumbnail(unlocked_content)
-                contentstore().generate_thumbnail(locked_content)
+                (_, thumb_loc) = contentstore().generate_thumbnail(unlocked_content, dimensions=(128, 128))
+                (_, thumb_loc) = contentstore().generate_thumbnail(locked_content, dimensions=(128, 128))
+
+                # Create an unlocked image in a subdirectory.
+                subdir_unlocked_image = Image.new('RGB', (500, 500), 'red')
+                subdir_unlocked_buf = StringIO()
+                subdir_unlocked_image.save(subdir_unlocked_buf, format='png')
+                subdir_unlocked_buf.seek(0)
+                subdir_unlocked_name = 'special/{}_unlock.png'.format(prefix)
+                subdir_unlocked_asset_key = StaticContent.compute_location(self.courses[prefix].id, subdir_unlocked_name)
+                subdir_unlocked_content = StaticContent(subdir_unlocked_asset_key, subdir_unlocked_name, 'image/png', subdir_unlocked_buf)
+                contentstore().save(subdir_unlocked_content)
+
+                # Create a locked image in a subdirectory.
+                subdir_locked_image = Image.new('RGB', (500, 500), 'red')
+                subdir_locked_buf = StringIO()
+                subdir_locked_image.save(subdir_locked_buf, format='png')
+                subdir_locked_buf.seek(0)
+                subdir_locked_name = 'special/{}_lock.png'.format(prefix)
+                subdir_locked_asset_key = StaticContent.compute_location(self.courses[prefix].id, subdir_locked_name)
+                subdir_locked_content = StaticContent(subdir_locked_asset_key, subdir_locked_name, 'image/png', subdir_locked_buf, locked=True)
+                contentstore().save(subdir_locked_content)
 
     @ddt.data(
-        (None, u"{prefix}_unlock.png", u"/{asset_key}@{prefix}_unlock.png"),
-        (None, u"{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (u"dev", u"{prefix}_unlock.png", u"//dev/{asset_key}@{prefix}_unlock.png"),
-        (u"dev", u"{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (None, u"/{prefix}_unlock.png", u"/{asset_key}@{prefix}_unlock.png"),
-        (None, u"/{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (u"dev", u"/{prefix}_unlock.png", u"//dev/{asset_key}@{prefix}_unlock.png"),
-        (u"dev", u"/{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (None, u"/static/{prefix}_unlock.png", u"/{asset_key}@{prefix}_unlock.png"),
-        (None, u"/static/{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (u"dev", u"/static/{prefix}_unlock.png", u"//dev/{asset_key}@{prefix}_unlock.png"),
-        (u"dev", u"/static/{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (None, u"/{asset_key}@{prefix}_unlock.png", u"/{asset_key}@{prefix}_unlock.png"),
-        (None, u"/{asset_key}@{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (u"dev", u"/{asset_key}@{prefix}_unlock.png", u"//dev/{asset_key}@{prefix}_unlock.png"),
-        (u"dev", u"/{asset_key}@{prefix}_lock.png", u"/{asset_key}@{prefix}_lock.png"),
-        (None, u"/{c4x}/{prefix}_unlock.png", u"/{c4x}/{prefix}_unlock.png"),
-        (None, u"/{c4x}/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (u"dev", u"/{c4x}/{prefix}_unlock.png", u"//dev/{c4x}/{prefix}_unlock.png"),
-        (u"dev", u"/{c4x}/{prefix}_lock.png", u"//dev/{c4x}/{prefix}_lock.png"),
-        (None, u"/{th_key}@{prefix}_unlock-{th_ext}", u"/{th_key}@{prefix}_unlock-{th_ext}"),
-        (None, u"/{th_key}@{prefix}_lock-{th_ext}", u"/{th_key}@{prefix}_lock-{th_ext}"),
-        (u'dev', u"/{th_key}@{prefix}_unlock-{th_ext}", u"//dev/{th_key}@{prefix}_unlock-{th_ext}"),
-        (u'dev', u"/{th_key}@{prefix}_lock-{th_ext}", u"//dev/{th_key}@{prefix}_lock-{th_ext}"),
+        # No leading slash.
+        (None, u'{prefix}_unlock.png', u'/{asset_key}@{prefix}_unlock.png', 1),
+        (None, u'{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (u'dev', u'{prefix}_unlock.png', u'//dev/{asset_key}@{prefix}_unlock.png', 1),
+        (u'dev', u'{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        # No leading slash with subdirectory.  This ensures we probably substitute slashes.
+        (None, u'special/{prefix}_unlock.png', u'/{asset_key}@special_{prefix}_unlock.png', 1),
+        (None, u'special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
+        (u'dev', u'special/{prefix}_unlock.png', u'//dev/{asset_key}@special_{prefix}_unlock.png', 1),
+        (u'dev', u'special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
+        # Leading slash.
+        (None, u'/{prefix}_unlock.png', u'/{asset_key}@{prefix}_unlock.png', 1),
+        (None, u'/{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (u'dev', u'/{prefix}_unlock.png', u'//dev/{asset_key}@{prefix}_unlock.png', 1),
+        (u'dev', u'/{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        # Leading slash with subdirectory.  This ensures we probably substitute slashes.
+        (None, u'/special/{prefix}_unlock.png', u'/{asset_key}@special_{prefix}_unlock.png', 1),
+        (None, u'/special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
+        (u'dev', u'/special/{prefix}_unlock.png', u'//dev/{asset_key}@special_{prefix}_unlock.png', 1),
+        (u'dev', u'/special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
+        # Static path.
+        (None, u'/static/{prefix}_unlock.png', u'/{asset_key}@{prefix}_unlock.png', 1),
+        (None, u'/static/{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (u'dev', u'/static/{prefix}_unlock.png', u'//dev/{asset_key}@{prefix}_unlock.png', 1),
+        (u'dev', u'/static/{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        # Static path with subdirectory.  This ensures we probably substitute slashes.
+        (None, u'/static/special/{prefix}_unlock.png', u'/{asset_key}@special_{prefix}_unlock.png', 1),
+        (None, u'/static/special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
+        (u'dev', u'/static/special/{prefix}_unlock.png', u'//dev/{asset_key}@special_{prefix}_unlock.png', 1),
+        (u'dev', u'/static/special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
+        # Static path with query parameter.
+        (
+            None,
+            u'/static/{prefix}_unlock.png?foo=/static/{prefix}_lock.png',
+            u'/{asset_key}@{prefix}_unlock.png?foo={encoded_asset_key}{prefix}_lock.png',
+            2
+        ),
+        (
+            None,
+            u'/static/{prefix}_lock.png?foo=/static/{prefix}_unlock.png',
+            u'/{asset_key}@{prefix}_lock.png?foo={encoded_asset_key}{prefix}_unlock.png',
+            2
+        ),
+        (
+            u'dev',
+            u'/static/{prefix}_unlock.png?foo=/static/{prefix}_lock.png',
+            u'//dev/{asset_key}@{prefix}_unlock.png?foo={encoded_asset_key}{prefix}_lock.png',
+            2
+        ),
+        (
+            u'dev',
+            u'/static/{prefix}_lock.png?foo=/static/{prefix}_unlock.png',
+            u'/{asset_key}@{prefix}_lock.png?foo=%2F%2Fdev{encoded_asset_key}{prefix}_unlock.png',
+            2
+        ),
+        # Already asset key.
+        (None, u'/{asset_key}@{prefix}_unlock.png', u'/{asset_key}@{prefix}_unlock.png', 1),
+        (None, u'/{asset_key}@{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (u'dev', u'/{asset_key}@{prefix}_unlock.png', u'//dev/{asset_key}@{prefix}_unlock.png', 1),
+        (u'dev', u'/{asset_key}@{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        # Old, c4x-style path.
+        (None, u'/{c4x}/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png', 1),
+        (None, u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png', 1),
+        (u'dev', u'/{c4x}/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png', 1),
+        (u'dev', u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png', 1),
+        # Thumbnails.
+        (None, u'/{th_key}@{prefix}_unlock-{th_ext}', u'/{th_key}@{prefix}_unlock-{th_ext}', 1),
+        (None, u'/{th_key}@{prefix}_lock-{th_ext}', u'/{th_key}@{prefix}_lock-{th_ext}', 1),
+        (u'dev', u'/{th_key}@{prefix}_unlock-{th_ext}', u'//dev/{th_key}@{prefix}_unlock-{th_ext}', 1),
+        (u'dev', u'/{th_key}@{prefix}_lock-{th_ext}', u'//dev/{th_key}@{prefix}_lock-{th_ext}', 1),
     )
     @ddt.unpack
-    @patch('xmodule.contentstore.content.StaticContent.get_base_url')
-    def test_canonical_asset_path_with_new_style_assets(self, base_url, start, expected, mock_get_base_url):
-        mock_get_base_url.return_value = base_url
-
+    def test_canonical_asset_path_with_new_style_assets(self, base_url, start, expected, mongo_calls):
         prefix = 'split'
         c4x = 'c4x/a/b/asset'
         asset_key = 'asset-v1:a+b+{}+type@asset+block'.format(prefix)
+        encoded_asset_key = quote_plus('/asset-v1:a+b+{}+type@asset+block@'.format(prefix))
         th_key = 'asset-v1:a+b+{}+type@thumbnail+block'.format(prefix)
         th_ext = 'png-128x128.jpg'
 
-        start = start.format(prefix=prefix, c4x=c4x, asset_key=asset_key, th_key=th_key, th_ext=th_ext)
-        expected = expected.format(prefix=prefix, c4x=c4x, asset_key=asset_key, th_key=th_key, th_ext=th_ext)
+        start = start.format(
+            prefix=prefix,
+            c4x=c4x,
+            asset_key=asset_key,
+            encoded_asset_key=encoded_asset_key,
+            th_key=th_key,
+            th_ext=th_ext
+        )
+        expected = expected.format(
+            prefix=prefix,
+            c4x=c4x,
+            asset_key=asset_key,
+            encoded_asset_key=encoded_asset_key,
+            th_key=th_key,
+            th_ext=th_ext
+        )
 
-        with check_mongo_calls(1):
-            asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, start)
+        with check_mongo_calls(mongo_calls):
+            asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, start, base_url)
             self.assertEqual(asset_path, expected)
 
     @ddt.data(
-        (None, u"{prefix}_unlock.png", u"/{c4x}/{prefix}_unlock.png"),
-        (None, u"{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (u"dev", u"{prefix}_unlock.png", u"//dev/{c4x}/{prefix}_unlock.png"),
-        (u"dev", u"{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (None, u"/{prefix}_unlock.png", u"/{c4x}/{prefix}_unlock.png"),
-        (None, u"/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (u"dev", u"/{prefix}_unlock.png", u"//dev/{c4x}/{prefix}_unlock.png"),
-        (u"dev", u"/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (None, u"/static/{prefix}_unlock.png", u"/{c4x}/{prefix}_unlock.png"),
-        (None, u"/static/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (u"dev", u"/static/{prefix}_unlock.png", u"//dev/{c4x}/{prefix}_unlock.png"),
-        (u"dev", u"/static/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (None, u"/{c4x}/{prefix}_unlock.png", u"/{c4x}/{prefix}_unlock.png"),
-        (None, u"/{c4x}/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
-        (u"dev", u"/{c4x}/{prefix}_unlock.png", u"//dev/{c4x}/{prefix}_unlock.png"),
-        (u"dev", u"/{c4x}/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
+        # No leading slash.
+        (None, u'{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png'),
+        (None, u'{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (u'dev', u'{prefix}_unlock.png', u'//dev/{c4x}/{prefix}_unlock.png'),
+        (u'dev', u'{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        # No leading slash with subdirectory.  This ensures we probably substitute slashes.
+        (None, u'special/{prefix}_unlock.png', u'/{c4x}/special_{prefix}_unlock.png'),
+        (None, u'special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
+        (u'dev', u'special/{prefix}_unlock.png', u'//dev/{c4x}/special_{prefix}_unlock.png'),
+        (u'dev', u'special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
+        # Leading slash.
+        (None, u'/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png'),
+        (None, u'/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (u'dev', u'/{prefix}_unlock.png', u'//dev/{c4x}/{prefix}_unlock.png'),
+        (u'dev', u'/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        # Leading slash with subdirectory. T his ensures we probably substitute slashes.
+        (None, u'/special/{prefix}_unlock.png', u'/{c4x}/special_{prefix}_unlock.png'),
+        (None, u'/special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
+        (u'dev', u'/special/{prefix}_unlock.png', u'//dev/{c4x}/special_{prefix}_unlock.png'),
+        (u'dev', u'/special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
+        # Static path.
+        (None, u'/static/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png'),
+        (None, u'/static/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (u'dev', u'/static/{prefix}_unlock.png', u'//dev/{c4x}/{prefix}_unlock.png'),
+        (u'dev', u'/static/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        # Static path with subdirectory.  This ensures we probably substitute slashes.
+        (None, u'/static/special/{prefix}_unlock.png', u'/{c4x}/special_{prefix}_unlock.png'),
+        (None, u'/static/special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
+        (u'dev', u'/static/special/{prefix}_unlock.png', u'//dev/{c4x}/special_{prefix}_unlock.png'),
+        (u'dev', u'/static/special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
+        # Old, c4x-style path.
+        (None, u'/{c4x}/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png'),
+        (None, u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (u'dev', u'/{c4x}/{prefix}_unlock.png', u'//dev/{c4x}/{prefix}_unlock.png'),
+        (u'dev', u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
     )
     @ddt.unpack
-    @patch('xmodule.contentstore.content.StaticContent.get_base_url')
-    def test_canonical_asset_path_with_c4x_style_assets(self, base_url, start, expected, mock_get_base_url):
-        mock_get_base_url.return_value = base_url
-
+    def test_canonical_asset_path_with_c4x_style_assets(self, base_url, start, expected):
         prefix = 'old'
         c4x_block = 'c4x/a/b/asset'
 
@@ -303,5 +389,5 @@ class CanonicalContentTest(ModuleStoreTestCase):
         expected = expected.format(prefix=prefix, c4x=c4x_block)
 
         with check_mongo_calls(1):
-            asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, start)
+            asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, start, base_url)
             self.assertEqual(asset_path, expected)
