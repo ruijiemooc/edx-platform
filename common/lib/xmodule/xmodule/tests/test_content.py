@@ -14,7 +14,7 @@ from xmodule.contentstore.django import contentstore
 from opaque_keys.edx.locations import SlashSeparatedCourseKey, AssetLocation
 from xmodule.modulestore import ModuleStoreEnum
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
-from xmodule.modulestore.tests.factories import CourseFactory
+from xmodule.modulestore.tests.factories import CourseFactory, check_mongo_calls
 from xmodule.static_content import _write_js, _list_descriptors
 
 SAMPLE_STRING = """
@@ -250,27 +250,28 @@ class CanonicalContentTest(ModuleStoreTestCase):
         (None, u"/{c4x}/{prefix}_lock.png", u"/{c4x}/{prefix}_lock.png"),
         (u"dev", u"/{c4x}/{prefix}_unlock.png", u"//dev/{c4x}/{prefix}_unlock.png"),
         (u"dev", u"/{c4x}/{prefix}_lock.png", u"//dev/{c4x}/{prefix}_lock.png"),
-        (None, u"/{thumb_key}@{prefix}_unlock-{thumb_ext}", u"/{thumb_key}@{prefix}_unlock-{thumb_ext}"),
-        (None, u"/{thumb_key}@{prefix}_lock-{thumb_ext}", u"/{thumb_key}@{prefix}_lock-{thumb_ext}"),
-        (u'dev', u"/{thumb_key}@{prefix}_unlock-{thumb_ext}", u"//dev/{thumb_key}@{prefix}_unlock-{thumb_ext}"),
-        (u'dev', u"/{thumb_key}@{prefix}_lock-{thumb_ext}", u"//dev/{thumb_key}@{prefix}_lock-{thumb_ext}"),
+        (None, u"/{th_key}@{prefix}_unlock-{th_ext}", u"/{th_key}@{prefix}_unlock-{th_ext}"),
+        (None, u"/{th_key}@{prefix}_lock-{th_ext}", u"/{th_key}@{prefix}_lock-{th_ext}"),
+        (u'dev', u"/{th_key}@{prefix}_unlock-{th_ext}", u"//dev/{th_key}@{prefix}_unlock-{th_ext}"),
+        (u'dev', u"/{th_key}@{prefix}_lock-{th_ext}", u"//dev/{th_key}@{prefix}_lock-{th_ext}"),
     )
     @ddt.unpack
     @patch('xmodule.contentstore.content.StaticContent.get_base_url')
-    def test_canonical_asset_path_with_new_style_assets(self, base_url, asset_name, expected_path, mock_static_content_get_base_url):
-        mock_static_content_get_base_url.return_value = base_url
+    def test_canonical_asset_path_with_new_style_assets(self, base_url, start, expected, mock_get_base_url):
+        mock_get_base_url.return_value = base_url
 
         prefix = 'split'
-        c4x_block = 'c4x/a/b/asset'
+        c4x = 'c4x/a/b/asset'
         asset_key = 'asset-v1:a+b+{}+type@asset+block'.format(prefix)
-        thumb_keynail = 'asset-v1:a+b+{}+type@thumbnail+block'.format(prefix)
-        thumb_ext = 'png-128x128.jpg'
+        th_key = 'asset-v1:a+b+{}+type@thumbnail+block'.format(prefix)
+        th_ext = 'png-128x128.jpg'
 
-        asset_name = asset_name.format(prefix=prefix, c4x=c4x_block, asset_key=asset_key, thumb_key=thumb_keynail, thumb_ext=thumb_ext)
-        expected_path = expected_path.format(prefix=prefix, c4x=c4x_block, asset_key=asset_key, thumb_key=thumb_keynail, thumb_ext=thumb_ext)
+        start = start.format(prefix=prefix, c4x=c4x, asset_key=asset_key, th_key=th_key, th_ext=th_ext)
+        expected = expected.format(prefix=prefix, c4x=c4x, asset_key=asset_key, th_key=th_key, th_ext=th_ext)
 
-        asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, asset_name)
-        self.assertEqual(asset_path, expected_path)
+        with check_mongo_calls(1):
+            asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, start)
+            self.assertEqual(asset_path, expected)
 
     @ddt.data(
         (None, u"{prefix}_unlock.png", u"/{c4x}/{prefix}_unlock.png"),
@@ -292,14 +293,15 @@ class CanonicalContentTest(ModuleStoreTestCase):
     )
     @ddt.unpack
     @patch('xmodule.contentstore.content.StaticContent.get_base_url')
-    def test_canonical_asset_path_with_c4x_style_assets(self, base_url, asset_name, expected_path, mock_static_content_get_base_url):
-        mock_static_content_get_base_url.return_value = base_url
+    def test_canonical_asset_path_with_c4x_style_assets(self, base_url, start, expected, mock_get_base_url):
+        mock_get_base_url.return_value = base_url
 
         prefix = 'old'
         c4x_block = 'c4x/a/b/asset'
 
-        asset_name = asset_name.format(prefix=prefix, c4x=c4x_block)
-        expected_path = expected_path.format(prefix=prefix, c4x=c4x_block)
+        start = start.format(prefix=prefix, c4x=c4x_block)
+        expected = expected.format(prefix=prefix, c4x=c4x_block)
 
-        asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, asset_name)
-        self.assertEqual(asset_path, expected_path)
+        with check_mongo_calls(1):
+            asset_path = StaticContent.get_canonicalized_asset_path(self.courses[prefix].id, start)
+            self.assertEqual(asset_path, expected)
