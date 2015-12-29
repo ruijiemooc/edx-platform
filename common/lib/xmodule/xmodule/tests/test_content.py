@@ -198,7 +198,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 self.courses[prefix] = CourseFactory.create(org='a', course='b', run=prefix)
 
                 # Create an unlocked image.
-                unlocked_image = Image.new('RGB', (32,32), 'blue')
+                unlocked_image = Image.new('RGB', (32, 32), 'blue')
                 unlocked_buf = StringIO()
                 unlocked_image.save(unlocked_buf, format='png')
                 unlocked_buf.seek(0)
@@ -208,7 +208,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(unlocked_content)
 
                 # Create a locked image.
-                locked_image = Image.new('RGB', (32,32), 'green')
+                locked_image = Image.new('RGB', (32, 32), 'green')
                 locked_buf = StringIO()
                 locked_image.save(locked_buf, format='png')
                 locked_buf.seek(0)
@@ -218,11 +218,11 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(locked_content)
 
                 # Create a thumbnail of the images.
-                (_, thumb_loc) = contentstore().generate_thumbnail(unlocked_content, dimensions=(16,16))
-                (_, thumb_loc) = contentstore().generate_thumbnail(locked_content, dimensions=(16,16))
+                (_, thumb_loc) = contentstore().generate_thumbnail(unlocked_content, dimensions=(16, 16))
+                (_, thumb_loc) = contentstore().generate_thumbnail(locked_content, dimensions=(16, 16))
 
                 # Create an unlocked image in a subdirectory.
-                subdir_unlocked_image = Image.new('RGB', (1,1), 'red')
+                subdir_unlocked_image = Image.new('RGB', (1, 1), 'red')
                 subdir_unlocked_buf = StringIO()
                 subdir_unlocked_image.save(subdir_unlocked_buf, format='png')
                 subdir_unlocked_buf.seek(0)
@@ -232,7 +232,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(subdir_unlocked_content)
 
                 # Create a locked image in a subdirectory.
-                subdir_locked_image = Image.new('RGB', (1,1), 'red')
+                subdir_locked_image = Image.new('RGB', (1, 1), 'red')
                 subdir_locked_buf = StringIO()
                 subdir_locked_image.save(subdir_locked_buf, format='png')
                 subdir_locked_buf.seek(0)
@@ -242,7 +242,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(subdir_locked_content)
 
                 # Create an unlocked image with funky characters in the name.
-                weird_unlocked_image = Image.new('RGB', (1,1), 'black')
+                weird_unlocked_image = Image.new('RGB', (1, 1), 'black')
                 weird_unlocked_buf = StringIO()
                 weird_unlocked_image.save(weird_unlocked_buf, format='png')
                 weird_unlocked_buf.seek(0)
