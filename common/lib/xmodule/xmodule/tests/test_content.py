@@ -198,7 +198,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 self.courses[prefix] = CourseFactory.create(org='a', course='b', run=prefix)
 
                 # Create an unlocked image.
-                unlocked_image = Image.new('RGB', (512, 512), 'blue')
+                unlocked_image = Image.new('RGB', (32,32), 'blue')
                 unlocked_buf = StringIO()
                 unlocked_image.save(unlocked_buf, format='png')
                 unlocked_buf.seek(0)
@@ -208,7 +208,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(unlocked_content)
 
                 # Create a locked image.
-                locked_image = Image.new('RGB', (512, 512), 'green')
+                locked_image = Image.new('RGB', (32,32), 'green')
                 locked_buf = StringIO()
                 locked_image.save(locked_buf, format='png')
                 locked_buf.seek(0)
@@ -218,11 +218,11 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(locked_content)
 
                 # Create a thumbnail of the images.
-                (_, thumb_loc) = contentstore().generate_thumbnail(unlocked_content, dimensions=(128, 128))
-                (_, thumb_loc) = contentstore().generate_thumbnail(locked_content, dimensions=(128, 128))
+                (_, thumb_loc) = contentstore().generate_thumbnail(unlocked_content, dimensions=(16,16))
+                (_, thumb_loc) = contentstore().generate_thumbnail(locked_content, dimensions=(16,16))
 
                 # Create an unlocked image in a subdirectory.
-                subdir_unlocked_image = Image.new('RGB', (500, 500), 'red')
+                subdir_unlocked_image = Image.new('RGB', (1,1), 'red')
                 subdir_unlocked_buf = StringIO()
                 subdir_unlocked_image.save(subdir_unlocked_buf, format='png')
                 subdir_unlocked_buf.seek(0)
@@ -232,7 +232,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 contentstore().save(subdir_unlocked_content)
 
                 # Create a locked image in a subdirectory.
-                subdir_locked_image = Image.new('RGB', (500, 500), 'red')
+                subdir_locked_image = Image.new('RGB', (1,1), 'red')
                 subdir_locked_buf = StringIO()
                 subdir_locked_image.save(subdir_locked_buf, format='png')
                 subdir_locked_buf.seek(0)
@@ -241,12 +241,24 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 subdir_locked_content = StaticContent(subdir_locked_asset_key, subdir_locked_name, 'image/png', subdir_locked_buf, locked=True)
                 contentstore().save(subdir_locked_content)
 
+                # Create an unlocked image with funky characters in the name.
+                weird_unlocked_image = Image.new('RGB', (1,1), 'black')
+                weird_unlocked_buf = StringIO()
+                weird_unlocked_image.save(weird_unlocked_buf, format='png')
+                weird_unlocked_buf.seek(0)
+                weird_unlocked_name = 'weird {}_unlock.png'.format(prefix)
+                weird_unlocked_asset_key = StaticContent.compute_location(self.courses[prefix].id, weird_unlocked_name)
+                weird_unlocked_content = StaticContent(weird_unlocked_asset_key, weird_unlocked_name, 'image/png', weird_unlocked_buf)
+                contentstore().save(weird_unlocked_content)
+
     @ddt.data(
         # No leading slash.
         (None, u'{prefix}_unlock.png', u'/{asset_key}@{prefix}_unlock.png', 1),
         (None, u'{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (None, u'weird {prefix}_unlock.png', u'/{asset_key}@weird_{prefix}_unlock.png', 1),
         (u'dev', u'{prefix}_unlock.png', u'//dev/{asset_key}@{prefix}_unlock.png', 1),
         (u'dev', u'{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (u'dev', u'weird {prefix}_unlock.png', u'//dev/{asset_key}@weird_{prefix}_unlock.png', 1),
         # No leading slash with subdirectory.  This ensures we probably substitute slashes.
         (None, u'special/{prefix}_unlock.png', u'/{asset_key}@special_{prefix}_unlock.png', 1),
         (None, u'special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
@@ -265,8 +277,10 @@ class CanonicalContentTest(ModuleStoreTestCase):
         # Static path.
         (None, u'/static/{prefix}_unlock.png', u'/{asset_key}@{prefix}_unlock.png', 1),
         (None, u'/static/{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (None, u'/static/weird {prefix}_unlock.png', u'/{asset_key}@weird_{prefix}_unlock.png', 1),
         (u'dev', u'/static/{prefix}_unlock.png', u'//dev/{asset_key}@{prefix}_unlock.png', 1),
         (u'dev', u'/static/{prefix}_lock.png', u'/{asset_key}@{prefix}_lock.png', 1),
+        (u'dev', u'/static/weird {prefix}_unlock.png', u'//dev/{asset_key}@weird_{prefix}_unlock.png', 1),
         # Static path with subdirectory.  This ensures we probably substitute slashes.
         (None, u'/static/special/{prefix}_unlock.png', u'/{asset_key}@special_{prefix}_unlock.png', 1),
         (None, u'/static/special/{prefix}_lock.png', u'/{asset_key}@special_{prefix}_lock.png', 1),
@@ -305,8 +319,10 @@ class CanonicalContentTest(ModuleStoreTestCase):
         # Old, c4x-style path.
         (None, u'/{c4x}/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png', 1),
         (None, u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png', 1),
+        (None, u'/{c4x}/weird_{prefix}_lock.png', u'/{c4x}/weird_{prefix}_lock.png', 1),
         (u'dev', u'/{c4x}/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png', 1),
         (u'dev', u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png', 1),
+        (u'dev', u'/{c4x}/weird_{prefix}_unlock.png', u'/{c4x}/weird_{prefix}_unlock.png', 1),
         # Thumbnails.
         (None, u'/{th_key}@{prefix}_unlock-{th_ext}', u'/{th_key}@{prefix}_unlock-{th_ext}', 1),
         (None, u'/{th_key}@{prefix}_lock-{th_ext}', u'/{th_key}@{prefix}_lock-{th_ext}', 1),
@@ -320,7 +336,7 @@ class CanonicalContentTest(ModuleStoreTestCase):
         asset_key = 'asset-v1:a+b+{}+type@asset+block'.format(prefix)
         encoded_asset_key = quote_plus('/asset-v1:a+b+{}+type@asset+block@'.format(prefix))
         th_key = 'asset-v1:a+b+{}+type@thumbnail+block'.format(prefix)
-        th_ext = 'png-128x128.jpg'
+        th_ext = 'png-16x16.jpg'
 
         start = start.format(
             prefix=prefix,
@@ -347,8 +363,10 @@ class CanonicalContentTest(ModuleStoreTestCase):
         # No leading slash.
         (None, u'{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png'),
         (None, u'{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (None, u'weird {prefix}_unlock.png', u'/{c4x}/weird_{prefix}_unlock.png'),
         (u'dev', u'{prefix}_unlock.png', u'//dev/{c4x}/{prefix}_unlock.png'),
         (u'dev', u'{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (u'dev', u'weird {prefix}_unlock.png', u'//dev/{c4x}/weird_{prefix}_unlock.png'),
         # No leading slash with subdirectory.  This ensures we probably substitute slashes.
         (None, u'special/{prefix}_unlock.png', u'/{c4x}/special_{prefix}_unlock.png'),
         (None, u'special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
@@ -367,8 +385,10 @@ class CanonicalContentTest(ModuleStoreTestCase):
         # Static path.
         (None, u'/static/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png'),
         (None, u'/static/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (None, u'/static/weird {prefix}_unlock.png', u'/{c4x}/weird_{prefix}_unlock.png'),
         (u'dev', u'/static/{prefix}_unlock.png', u'//dev/{c4x}/{prefix}_unlock.png'),
         (u'dev', u'/static/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (u'dev', u'/static/weird {prefix}_unlock.png', u'//dev/{c4x}/weird_{prefix}_unlock.png'),
         # Static path with subdirectory.  This ensures we probably substitute slashes.
         (None, u'/static/special/{prefix}_unlock.png', u'/{c4x}/special_{prefix}_unlock.png'),
         (None, u'/static/special/{prefix}_lock.png', u'/{c4x}/special_{prefix}_lock.png'),
@@ -377,8 +397,10 @@ class CanonicalContentTest(ModuleStoreTestCase):
         # Old, c4x-style path.
         (None, u'/{c4x}/{prefix}_unlock.png', u'/{c4x}/{prefix}_unlock.png'),
         (None, u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (None, u'/{c4x}/weird_{prefix}_unlock.png', u'/{c4x}/weird_{prefix}_unlock.png'),
         (u'dev', u'/{c4x}/{prefix}_unlock.png', u'//dev/{c4x}/{prefix}_unlock.png'),
         (u'dev', u'/{c4x}/{prefix}_lock.png', u'/{c4x}/{prefix}_lock.png'),
+        (u'dev', u'/{c4x}/weird_{prefix}_unlock.png', u'//dev/{c4x}/weird_{prefix}_unlock.png'),
     )
     @ddt.unpack
     def test_canonical_asset_path_with_c4x_style_assets(self, base_url, start, expected):
