@@ -22,10 +22,10 @@ define(['jquery.cookie', 'utility', 'common/js/components/utils/view_utils'], fu
 
         $('form#login_form').submit(function(event) {
             event.preventDefault();
-            var submit_button = $('#submit'),
+            var submitButton = $('#submit'),
                 deferred = new $.Deferred(),
                 promise = deferred.promise();
-            ViewUtils.disableElementWhileRunning(submit_button, function() { return promise; });
+            ViewUtils.disableElementWhileRunning(submitButton, function() { return promise; });
             var submit_data = $('#login_form').serialize();
 
             postJSON('/login_post', submit_data, function(json) {
