@@ -43,6 +43,14 @@ class StaticContent(object):
 
     @staticmethod
     def get_base_url():
+        """
+        Gets the base URL to prepend to asset URLs.
+
+        This is used for serving assets from a particular domain.
+        Returns:
+            string: the base URL to use for assets
+
+        """
         return StaticContent.base_url
 
     @property
@@ -180,8 +188,6 @@ class StaticContent(object):
             if path.startswith('/static/'):
                 return StaticContent.convert_legacy_static_url_with_course_id(path, course_key)
 
-            pass
-
         # Update any query parameter values that have asset paths in them. This is for assets that
         # require their own after-the-fact values, like a Flash file that needs the path of a config
         # file passed to it e.g. /static/visualization.swf?configFile=/static/visualization.xml
@@ -196,7 +202,7 @@ class StaticContent(object):
                 updated_query_params.append((query_name, query_value))
 
         # Figure out if we should put in the base URL.
-        base_url = '' if is_locked else StaticContent.get_base_url()
+        base_url = None if is_locked else StaticContent.get_base_url()
 
         serialized_asset_key = StaticContent.serialize_asset_key_with_slash(asset_key)
 
@@ -259,6 +265,17 @@ class StaticContent(object):
 
     @staticmethod
     def remove_prefix(path, prefix):
+        """
+        Removes the given prefix from the path and also drops any leading slashes.
+
+        This prepares paths to be parsed for asset-related operations.
+        Args:
+            path: the path to clean
+            prefix: the prefix to remove, if present
+
+        Returns:
+            string: the cleaned path
+        """
         if path.startswith(prefix):
             path = path[len(prefix):]
 
