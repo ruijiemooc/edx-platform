@@ -101,7 +101,7 @@ def test_mongo_filestore(mock_get_base_url, mock_modulestore, mock_static_conten
         replace_static_urls(STATIC_SOURCE, DATA_DIRECTORY, course_id=COURSE_KEY)
     )
 
-    mock_static_content.get_canonicalized_asset_path.assert_called_once_with(COURSE_KEY, 'file.png', mock_get_base_url.return_value)
+    mock_static_content.get_canonicalized_asset_path.assert_called_once_with(COURSE_KEY, 'file.png', u'')
 
 
 @patch('static_replace.settings', autospec=True)

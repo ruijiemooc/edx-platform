@@ -5,7 +5,6 @@ import os
 import unittest
 import ddt
 from PIL import Image
-from mock import patch
 from path import Path as path
 from urllib import quote_plus
 
@@ -198,58 +197,58 @@ class CanonicalContentTest(ModuleStoreTestCase):
                 self.courses[prefix] = CourseFactory.create(org='a', course='b', run=prefix)
 
                 # Create an unlocked image.
-                unlocked_image = Image.new('RGB', (32, 32), 'blue')
-                unlocked_buf = StringIO()
-                unlocked_image.save(unlocked_buf, format='png')
-                unlocked_buf.seek(0)
-                unlocked_name = '{}_unlock.png'.format(prefix)
-                unlocked_asset_key = StaticContent.compute_location(self.courses[prefix].id, unlocked_name)
-                unlocked_content = StaticContent(unlocked_asset_key, unlocked_name, 'image/png', unlocked_buf.buf)
-                contentstore().save(unlocked_content)
+                unlock_image = Image.new('RGB', (32, 32), 'blue')
+                unlock_buf = StringIO()
+                unlock_image.save(unlock_buf, format='png')
+                unlock_buf.seek(0)
+                unlock_name = '{}_unlock.png'.format(prefix)
+                unlock_key = StaticContent.compute_location(self.courses[prefix].id, unlock_name)
+                unlock_content = StaticContent(unlock_key, unlock_name, 'image/png', unlock_buf.buf)
+                contentstore().save(unlock_content)
 
                 # Create a locked image.
-                locked_image = Image.new('RGB', (32, 32), 'green')
-                locked_buf = StringIO()
-                locked_image.save(locked_buf, format='png')
-                locked_buf.seek(0)
-                locked_name = '{}_lock.png'.format(prefix)
-                locked_asset_key = StaticContent.compute_location(self.courses[prefix].id, locked_name)
-                locked_content = StaticContent(locked_asset_key, locked_name, 'image/png', locked_buf.buf, locked=True)
-                contentstore().save(locked_content)
+                lock_image = Image.new('RGB', (32, 32), 'green')
+                lock_buf = StringIO()
+                lock_image.save(lock_buf, format='png')
+                lock_buf.seek(0)
+                lock_name = '{}_lock.png'.format(prefix)
+                lock_key = StaticContent.compute_location(self.courses[prefix].id, lock_name)
+                lock_content = StaticContent(lock_key, lock_name, 'image/png', lock_buf.buf, locked=True)
+                contentstore().save(lock_content)
 
                 # Create a thumbnail of the images.
-                (_, thumb_loc) = contentstore().generate_thumbnail(unlocked_content, dimensions=(16, 16))
-                (_, thumb_loc) = contentstore().generate_thumbnail(locked_content, dimensions=(16, 16))
+                contentstore().generate_thumbnail(unlock_content, dimensions=(16, 16))
+                contentstore().generate_thumbnail(lock_content, dimensions=(16, 16))
 
                 # Create an unlocked image in a subdirectory.
-                subdir_unlocked_image = Image.new('RGB', (1, 1), 'red')
-                subdir_unlocked_buf = StringIO()
-                subdir_unlocked_image.save(subdir_unlocked_buf, format='png')
-                subdir_unlocked_buf.seek(0)
-                subdir_unlocked_name = 'special/{}_unlock.png'.format(prefix)
-                subdir_unlocked_asset_key = StaticContent.compute_location(self.courses[prefix].id, subdir_unlocked_name)
-                subdir_unlocked_content = StaticContent(subdir_unlocked_asset_key, subdir_unlocked_name, 'image/png', subdir_unlocked_buf)
-                contentstore().save(subdir_unlocked_content)
+                sd_unlock_image = Image.new('RGB', (1, 1), 'red')
+                sd_unlock_buf = StringIO()
+                sd_unlock_image.save(sd_unlock_buf, format='png')
+                sd_unlock_buf.seek(0)
+                sd_unlock_name = 'special/{}_unlock.png'.format(prefix)
+                sd_unlock_key = StaticContent.compute_location(self.courses[prefix].id, sd_unlock_name)
+                sd_unlock_content = StaticContent(sd_unlock_key, sd_unlock_name, 'image/png', sd_unlock_buf)
+                contentstore().save(sd_unlock_content)
 
                 # Create a locked image in a subdirectory.
-                subdir_locked_image = Image.new('RGB', (1, 1), 'red')
-                subdir_locked_buf = StringIO()
-                subdir_locked_image.save(subdir_locked_buf, format='png')
-                subdir_locked_buf.seek(0)
-                subdir_locked_name = 'special/{}_lock.png'.format(prefix)
-                subdir_locked_asset_key = StaticContent.compute_location(self.courses[prefix].id, subdir_locked_name)
-                subdir_locked_content = StaticContent(subdir_locked_asset_key, subdir_locked_name, 'image/png', subdir_locked_buf, locked=True)
-                contentstore().save(subdir_locked_content)
+                sd_lock_image = Image.new('RGB', (1, 1), 'red')
+                sd_lock_buf = StringIO()
+                sd_lock_image.save(sd_lock_buf, format='png')
+                sd_lock_buf.seek(0)
+                sd_lock_name = 'special/{}_lock.png'.format(prefix)
+                sd_lock_key = StaticContent.compute_location(self.courses[prefix].id, sd_lock_name)
+                sd_lock_content = StaticContent(sd_lock_key, sd_lock_name, 'image/png', sd_lock_buf, locked=True)
+                contentstore().save(sd_lock_content)
 
                 # Create an unlocked image with funky characters in the name.
-                weird_unlocked_image = Image.new('RGB', (1, 1), 'black')
-                weird_unlocked_buf = StringIO()
-                weird_unlocked_image.save(weird_unlocked_buf, format='png')
-                weird_unlocked_buf.seek(0)
-                weird_unlocked_name = 'weird {}_unlock.png'.format(prefix)
-                weird_unlocked_asset_key = StaticContent.compute_location(self.courses[prefix].id, weird_unlocked_name)
-                weird_unlocked_content = StaticContent(weird_unlocked_asset_key, weird_unlocked_name, 'image/png', weird_unlocked_buf)
-                contentstore().save(weird_unlocked_content)
+                weird_unlock_image = Image.new('RGB', (1, 1), 'black')
+                weird_unlock_buf = StringIO()
+                weird_unlock_image.save(weird_unlock_buf, format='png')
+                weird_unlock_buf.seek(0)
+                weird_unlock_name = 'weird {}_unlock.png'.format(prefix)
+                weird_unlock_key = StaticContent.compute_location(self.courses[prefix].id, weird_unlock_name)
+                weird_unlock_content = StaticContent(weird_unlock_key, weird_unlock_name, 'image/png', weird_unlock_buf)
+                contentstore().save(weird_unlock_content)
 
     @ddt.data(
         # No leading slash.

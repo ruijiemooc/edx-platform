@@ -17,3 +17,6 @@ class AssetBaseUrlConfig(ConfigurationModel):
     def get_base_url(cls):
         """Gets the base URL to use for serving static assets, if present"""
         return cls.current().base_url
+
+    def __unicode__(self):
+        return unicode(repr(self))
